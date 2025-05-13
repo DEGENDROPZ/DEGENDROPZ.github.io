@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Degen Dropz</title>
+  <style>
+    body {
+      background: url('cyberpunk-bg.jpg') no-repeat center center fixed;
+      background-size: cover;
+      background-blend-mode: overlay;
+      margin: 0;
+      padding: 0;
+    }
+
+    #container {
+      display: flex;
+      height: 100vh;
+      width: 100vw;
+    }
+
+    .sidebar {
+      width: 300px;
+      background: rgba(10, 10, 30, 0.85);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding-top: 20px;
+      border-right: 2px solid #2a2a40;
+    }
+
+    .sidebar img {
+      max-width: 260px;
+      height: auto;
+      margin-bottom: 20px;
+      animation: pulseGlow 2.5s infinite ease-in-out;
+      filter: drop-shadow(0 0 10px #00ffff) drop-shadow(0 0 15px #00ff66);
+    }
+
+    .glow-text {
+      color: #00ffff;
+      text-align: center;
+      font-family: 'monospace';
+      font-size: 18px;
+      margin: 10px 0 20px;
+      animation: pulseGlow 2.5s infinite ease-in-out;
+    }
+
+    .glow-button {
+      background: #00ffff;
+      color: #000;
+      border: none;
+      padding: 12px 20px;
+      font-size: 16px;
+      font-weight: bold;
+      border-radius: 8px;
+      cursor: pointer;
+      box-shadow: 0 0 12px #00ffff;
+      animation: pulseGlow 2.5s infinite ease-in-out;
+      transition: background 0.3s;
+      margin-bottom: 20px;
+    }
+
+    .glow-button:hover {
+      background: #00cccc;
+    }
+
+    @keyframes pulseGlow {
+      0% {
+        filter: drop-shadow(0 0 6px #00ffff) drop-shadow(0 0 10px #00ff66);
+      }
+      50% {
+        filter: drop-shadow(0 0 25px #00ffff) drop-shadow(0 0 30px #00ff66);
+      }
+      100% {
+        filter: drop-shadow(0 0 6px #00ffff) drop-shadow(0 0 10px #00ff66);
+      }
+    }
+
+    .game-area {
+      flex: 1;
+      position: relative;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .rightbar {
+      width: 200px;
+      background: rgba(10, 10, 30, 0.85);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      border-left: 2px solid #2a2a40;
+    }
+
+    .rightbar button {
+      background: #00ffff;
+      color: #000;
+      border: none;
+      padding: 15px 30px;
+      font-size: 20px;
+      font-weight: bold;
+      border-radius: 10px;
+      cursor: pointer;
+      box-shadow: 0 0 20px #00ffff;
+      transition: background 0.3s;
+    }
+
+    .rightbar button:hover {
+      background: #00cccc;
+    }
+
+    canvas {
+      background-color: rgba(17, 17, 34, 0.75);
+      border: 2px solid #444;
+      box-shadow: 0 0 20px #00ffff66;
+    }
+
+    .float-score {
+      position: absolute;
+      color: #00ff99;
+      font-weight: bold;
+      pointer-events: none;
+      animation: floatUp 1s ease-out forwards;
+    }
+
+    @keyframes floatUp {
+      from { opacity: 1; transform: translateY(0); }
+      to { opacity: 0; transform: translateY(-30px); }
+    }
+  </style>
+</head>
+<body>
+  <div id="container">
+    <div class="sidebar">
+      <img src="A_digital_illustration_in_cyberpunk_art_style_depi.png" alt="Futuristic Character" />
+      
+      <!-- ✅ ADDED GLOW TEXT & BUTTON BELOW IMAGE -->
+      <h2 class="glow-text">How to get earned $DROPZ?</h2>
+      <button class="glow-button" onclick="window.location.href='howto.html'">LEARN</button>
+    </div>
+
+    <div class="game-area">
+      <canvas id="gameCanvas" width="720" height="600"></canvas>
+    </div>
+
+    <div class="rightbar">
+      <button onclick="dropCoin()">DROPZ</button>
+    </div>
+  </div>
+
+  <!-- Sound effects -->
+  <audio id="hitSound" src="hit.mp3"></audio>
+  <audio id="scoreSound" src="score.mp3"></audio>
+
+  <!-- Background music (autoplay on first user interaction) -->
+  <audio id="bgMusic" src="synthwave.mp3" loop></audio>
+
+  <!-- Your game logic and visuals -->
+  <script>
+    // [Script unchanged except for reduced bounciness, already included in your last version]
+    // ... your script is already complete and integrated correctly ...
+  </script>
+</body>
+</html>
+
+
+<script>
+  const canvas = document.getElementById("gameCanvas");
+  const ctx = canvas.getContext("2d");
+  const hitSound = document.getElementById("hitSound");
+  const scoreSound = document.getElementById("scoreSound");
+  const bgMusic = document.getElementById("bgMusic");
+
+  bgMusic.volume = 0.3;
+  let musicStarted = false;
+
+  function startMusicOnce() {
+    if (!musicStarted) {
+      bgMusic.play().catch((e) => console.log("Autoplay blocked:", e));
+      musicStarted = true;
+    }
+  }
+
+  window.addEventListener("click", startMusicOnce, { once: true });
+
+  const coins = [];
+  const pegs = [];
+  const gravity = 0.1; // Slower falling
+  let score = 0;
+  let ballsDropped = 0;
+  const maxBalls = 100;
+
+  const boxes = [
+    { x: 0, width: 80, score: 10000 },
+    { x: 80, width: 80, score: 7500 },
+    { x: 160, width: 80, score: 5000 },
+    { x: 240, width: 80, score: -3000 },
+    { x: 320, width: 80, score: -1000 },
+    { x: 400, width: 80, score: -3000 },
+    { x: 480, width: 80, score: 5000 },
+    { x: 560, width: 80, score: 7500 },
+    { x: 640, width: 80, score: 10000 }
+  ];
+
+  function dropCoin() {
+    if (ballsDropped >= maxBalls) return;
+
+    coins.push({
+      x: canvas.width / 2,
+      y: 0,
+      radius: 12,
+      vy: 0,
+      vx: (Math.random() - 0.5) * 2,
+      color: "#00ff66",
+      scored: false
+    });
+
+    ballsDropped++;
+  }
+
+  function createPegs() {
+    const rows = 9;
+    const spacing = 80;
+    const startY = 80;
+
+    for (let row = 0; row < rows; row++) {
+      const pegsInRow = row + 2;
+      const offsetX = (canvas.width - (pegsInRow - 1) * spacing) / 2;
+
+      for (let i = 0; i < pegsInRow; i++) {
+        const x = offsetX + i * spacing;
+        const y = startY + row * 50;
+        pegs.push({ x, y, radius: 6 });
+      }
+    }
+  }
+
+  function checkCollision(ball, peg) {
+    const dx = ball.x - peg.x;
+    const dy = ball.y - peg.y;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    return dist < ball.radius + peg.radius;
+  }
+
+  function resolveCollision(ball, peg) {
+    const dx = ball.x - peg.x;
+    const dy = ball.y - peg.y;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    const overlap = ball.radius + peg.radius - dist;
+    if (dist === 0) return;
+
+    const nx = dx / dist;
+    const ny = dy / dist;
+
+    ball.x += nx * overlap;
+    ball.y += ny * overlap;
+
+    const dot = ball.vx * nx + ball.vy * ny;
+    ball.vx -= 2 * dot * nx;
+    ball.vy -= 2 * dot * ny;
+
+    ball.vx += (Math.random() - 0.5) * 0.8;  // Less randomness
+ball.vx *= 0.5;  // Less bouncy
+ball.vy *= 0.5;  // Less bouncy
+
+    hitSound.currentTime = 0;
+    hitSound.play();
+  }
+
+  function showFloatingScore(x, y, text, color) {
+    const div = document.createElement('div');
+    div.className = 'float-score';
+    div.style.left = (canvas.offsetLeft + x - 10) + 'px';
+    div.style.top = (canvas.offsetTop + y - 10) + 'px';
+    div.style.color = color;
+    div.textContent = text;
+    document.body.appendChild(div);
+    setTimeout(() => document.body.removeChild(div), 1000);
+  }
+
+  function drawScoreboard() {
+    ctx.fillStyle = "#00ffcc";
+    ctx.font = "16px monospace";
+    ctx.textAlign = "right";
+    ctx.fillText(`Score: $${score}`, canvas.width - 10, 30);
+    ctx.fillText(`Balls Left: ${maxBalls - ballsDropped}`, canvas.width - 10, 50);
+  }
+
+  function update() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Draw scoreboard
+    drawScoreboard();
+
+    // Draw pegs
+    pegs.forEach(peg => {
+      ctx.beginPath();
+      ctx.arc(peg.x, peg.y, peg.radius, 0, Math.PI * 2);
+      ctx.fillStyle = "#4444aa";
+      ctx.fill();
+      ctx.closePath();
+    });
+
+    // Draw boxes
+    for (const box of boxes) {
+      ctx.fillStyle = "#222";
+      ctx.fillRect(box.x, canvas.height - 40, box.width, 40);
+      ctx.fillStyle = box.score < 0 ? "#ff3366" : "#00ffff";
+      ctx.font = "14px monospace";
+      ctx.textAlign = "center";
+      ctx.fillText(box.score, box.x + box.width / 2, canvas.height - 15);
+    }
+
+    // Update coins
+    for (let i = coins.length - 1; i >= 0; i--) {
+      const c = coins[i];
+
+      if (!c.scored) {
+        c.vy += gravity;
+        c.y += c.vy;
+        c.x += c.vx;
+
+        pegs.forEach(peg => {
+          if (checkCollision(c, peg)) {
+            resolveCollision(c, peg);
+          }
+        });
+
+        if (c.x - c.radius < 0) {
+          c.x = c.radius;
+          c.vx *= -0.6;
+        } else if (c.x + c.radius > canvas.width) {
+          c.x = canvas.width - c.radius;
+          c.vx *= -0.6;
+        }
+
+        if (c.y + c.radius >= canvas.height - 40) {
+          c.y = canvas.height - 40 - c.radius;
+          c.scored = true;
+
+          const box = boxes.find(b => c.x >= b.x && c.x < b.x + b.width);
+          if (box) {
+            score += box.score;
+            showFloatingScore(c.x, c.y, `${box.score >= 0 ? '+' : ''}$${box.score}`, box.score < 0 ? '#ff3366' : '#00ff99');
+            scoreSound.currentTime = 0;
+            scoreSound.play();
+          }
+
+          coins.splice(i, 1);
+          continue;
+        }
+      }
+
+      ctx.beginPath();
+      ctx.arc(c.x, c.y, c.radius, 0, Math.PI * 2);
+      ctx.fillStyle = c.color;
+      ctx.shadowColor = c.color;
+      ctx.shadowBlur = 10;
+      ctx.fill();
+      ctx.shadowBlur = 0;
+      ctx.closePath();
+    }
+
+    requestAnimationFrame(update);
+  }
+
+  createPegs();
+  update();
+</script>
+
+</body>
+</html>
